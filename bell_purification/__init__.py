@@ -2,6 +2,8 @@
 
 # Add imports here
 from .purification import *
+from .general_functions import *
+
 
 # Handle versioneer
 from ._version import get_versions
