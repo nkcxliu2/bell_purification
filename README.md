@@ -7,7 +7,7 @@ bell_purification
 
 Estimate the Bell state purification scheme performance and resource cost.
 
-In this repo, we consider using the Deutsch protocol [[1]](#"Deutsch") for Bell state purification. We consider estimating the purification fidelity after $n$ nested successful purification rounds. The Bennett protocols [[2]](#"Bennett") is similar to Deutsch protocol, which is simulated using enforcing the middle step purification states to be Warner states.  More detailed information about nested purification can be found in Ref. [[3]](#"Dur").
+In this repo, we consider using the Deutsch protocol [[1]](#"Deutsch") for Bell state purification. We consider estimating the purification fidelity after $n$ nested successful purification rounds. The Bennett protocols [[2]](#"Bennett") is similar to Deutsch protocol, which is simulated using enforcing the middle step purification states to be Warner states (haven't done it yet).  More detailed information about nested purification can be found in Ref. [[3]](#"Dur").
 
 ## References
 <a id="Deutsch">[1]</a> 
