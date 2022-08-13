@@ -1,3 +1,4 @@
+from mimetypes import init
 import numpy as np
 from numpy import sqrt, power
 from numpy import pi as PI
@@ -34,11 +35,13 @@ class Purification:
             raise ValueError('T1 time should be positive.')
         if t2<0:
             raise ValueError('T2 time should be positive.')
+        if t<0:
+            raise ValueError('T2 time should be positive.')
         if target_fidelity>1 or target_fidelity<=0:
             raise ValueError('Invalid target fidelity input.')
         if error_p>1.0 or error_p<0:
             raise ValueError('Invalid error probability input.')
-        if max_nest<0:
+        if max_nest<=0:
             raise ValueError('Maximum nested number should be a positive int.')
         if pair_num_method!='expect' and pair_num_method!='min':
             raise ValueError('The allowed pair_num_method inputs are \'expect\' and \'min\' only.')
@@ -47,7 +50,7 @@ class Purification:
         self.t = t
         self.target_fidelity = target_fidelity
         self.error_p = error_p
-        self.max_nest = max_nest
+        self.max_nest = int(max_nest)
         self.method = pair_num_method
         
         if isinstance(init_state, list):
@@ -57,8 +60,14 @@ class Purification:
                 raise ValueError('The input init_state dimension does not match the dimension of two qubits.')
             self.init_state = qt.Qobj(init_state)
             self.init_state.dims = [[2,2],[2,2]]
-        else:
+        elif isinstance(init_state, qt.Qobj):
+            if init_state.data.shape != (4,4):
+                raise ValueError('The input init_state dimention does not match.')
             self.init_state = init_state
+        elif init_state is None:
+            self.init_state = init_state
+        else:
+            raise ValueError('The input init_state type is not recognized.')
         
         self.result = {} ## this is to save the final result
         return
@@ -92,6 +101,7 @@ class Purification:
         if len(indices) == 0:
             print('Within {:2d} rounds of purification, the target fidelity has not been reached.'.format(self.max_nest))
             ## save data
+            self.result['mode'] = 'reach target fidelity'
             self.result['max_nest_level'] = self.max_nest
             self.result['purification round'] = -1
             self.result['fidelity'] = []
@@ -104,16 +114,16 @@ class Purification:
             self.result['all_success_dm'] = dm_list
             return
         else:
-            success = success_prob[:indices[0]+1]
+            success = success_prob[:indices[0]]
             fid = fidelity[:indices[0]+1]
             dm = dm_list[:indices[0]+1]
             bell_pair_num = self._solve_number(success)
 
             self.result['max_nest_level'] = self.max_nest
-            self.result['purification round'] = indices[0]+1
-            self.result['fidelity'] = fid
+            self.result['purification round'] = indices[0]
+            self.result['fidelity'] = fid[-1]
             self.result['success_probability'] = success
-            self.result['required bell paris'] = bell_pair_num
+            self.result['required bell pairs'] = bell_pair_num
             self.result['final_state_dm'] = dm[-1]
 
             self.result['all_fidelity'] = fidelity
@@ -121,3 +131,27 @@ class Purification:
             self.result['all_success_dm'] = dm_list
 
             return
+    
+    def solve_num_pairs(self):
+        '''
+        solve the fidelity till the given purification round
+        '''
+        fidelity, dm_list, success_prob = nest_Deutsch_error(self.t1, self.t2, self.t,\
+            self.error_p, self.init_state, self.max_nest, dm_output=True, prob_output=True)
+        
+        success_prob = np.array(success_prob)
+
+        bell_pairs = []
+        for i in range(len(success_prob)):
+            bell_pairs.append(self._solve_number(success_prob[:i]))
+
+        self.result['mode'] = 'solve required bell pairs'
+        self.result['max_nest_level'] = self.max_nest
+
+        self.result['bell pairs'] = np.array(bell_pairs)
+
+        self.result['all_fidelity'] = fidelity
+        self.result['all_success_probability'] = success_prob
+        self.result['all_success_dm'] = dm_list
+
+        return
